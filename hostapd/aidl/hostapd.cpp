@@ -803,6 +803,21 @@ std::string CreateHostapdConfig(
 				sec_channel = -1;
 			}
 		}
+		/* 169 and 177 are upper primaries of their 40 MHz pairs.
+		 * HT40+ makes 169 fall back to HT20 and points 177 at channel 181,
+		 * which is outside the supported 5 GHz channel list. Keep the
+		 * operating class and emitted HT capability in agreement.
+		 */
+		if (band == band5Ghz && sec_channel &&
+		    (channelParams.channel == 169 || channelParams.channel == 177)) {
+			sec_channel = -1;
+			const std::string ht40_plus = "ht_capab=[HT40+]";
+			auto offset = ht_cap_vht_oper_he_oper_eht_oper_chwidth_as_string.find(ht40_plus);
+			if (offset != std::string::npos) {
+				ht_cap_vht_oper_he_oper_eht_oper_chwidth_as_string.replace(
+					offset, ht40_plus.size(), "ht_capab=[HT40-]");
+			}
+		}
 		mode = ieee80211_freq_to_channel_ext(freq, sec_channel, chanwidth, &op_class,
 						     &chan);
 		if (mode == NUM_HOSTAPD_MODES) {
